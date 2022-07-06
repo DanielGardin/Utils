@@ -1,9 +1,12 @@
-struct Dual{R <: Real, D <: Real}
-    primal::R
-    dual::D
+struct Dual
+    primal
+    dual
 end
 
 const ϵ = Dual(0, 1)
+
+Base.length(::Dual) = 1
+Base.eltype(::Dual) = Dual
 
 Base.one(::Type{Dual}) = Dual(1, 0)
 Base.zero(::Type{Dual}) = Dual(0, 0)
@@ -32,8 +35,8 @@ Base.:+(d::Dual, x) = Dual(x + d.primal, d.dual)
 Base.:-(d::Dual, x) = Dual(d.primal - x, d.dual)
 
 Base.:*(a::Dual, b::Dual) = Dual(a.primal * b.primal, a.primal * b.dual + a.dual * b.primal)
-Base.:*(x, d::Dual) = Dual(x * d.primal, x * d.dual)
-Base.:*(d::Dual, x) = Dual(x * d.primal, x * d.dual)
+Base.:*(x::T, d::Dual) where T<:Real = Dual(x * d.primal, x * d.dual)
+Base.:*(d::Dual, x::T) where T<:Real = Dual(x * d.primal, x * d.dual)
 
 Base.:/(a::Dual, b::Dual) = Dual(a.primal/b.primal, (a.dual * b.primal- a.primal * b.dual)/b.primal^2)
 Base.:/(x, d::Dual) = Dual(x/d.primal, -x*d.dual/d.primal^2)
@@ -55,51 +58,20 @@ Base.isequal(a::Dual, b::Dual) = a.primal == b.primal && a.dual == b.dual
 derivative(f::Function) = x -> f(x + ϵ).dual
 derivative(f::Function, x::Real) = f(x + ϵ).dual
 
-function partial(f::Function, var::Symbol, x)
-    method = nothing
-    for m in methods(f)
-        m.nargs - 1 != length(x) && continue
+function gradient(f::Function, x)
+    ∇f = zeros(eltype(x), length(x))
 
-        method = m
-    end
-
-    isnothing(method) && throw(ErrorException("$(length(x)) arguments Method not found"))
-
-    argnames = ccall(:jl_uncompress_argnames, Vector{Symbol}, (Any,), method.slot_syms)
-    isempty(argnames) && return argnames
-    vars = argnames[2:method.nargs]
-
-    pos = findfirst(isequal(var), vars)
-
-    isnothing(pos) && throw(ErrorException("Variable $var not found"))
-
-    dx = Dual.(x)
-    dx[pos] += ϵ
-
-    f(dx...).dual
-end
-
-partial(f::Function, var::Symbol, x...) = partial(f::Function, var::Symbol, collect(x))
-
-function partial(f::Function, var::Symbol)
-    method = first(methods(f))
-
-    argnames = ccall(:jl_uncompress_argnames, Vector{Symbol}, (Any,), method.slot_syms)
-    isempty(argnames) && return argnames
-    vars = argnames[2:method.nargs]
-
-    pos = findfirst(isequal(var), vars)
-
-    isnothing(pos) && throw(ErrorException("Variable $var not found"))
-
-    x -> begin
+    for pos in eachindex(x)
         dx = Dual.(x)
         dx[pos] += ϵ
 
-        f(dx...).dual
+        ∇f[pos] = f(dx...).dual
     end
+
+    ∇f
 end
 
+∇(f::Function, x) = gradient(f, x)
 
 function Base.show(io::IO, d::Dual)
     print(io, "$(d.primal) + $(d.dual)ϵ")

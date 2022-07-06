@@ -1,4 +1,4 @@
-
+include("AutoDiff.jl")
 #--------------------------------------------------------------------------------------------------
 ## Neural Networks
 
@@ -13,28 +13,7 @@ const logistic = σ
 # tanh(x) already defined
 const step(x) = x < 0 ? 0 : 1
 
-function derivative(fun::Function, x; ϵ = 10^-5)
-    if fun == ReLU
-        return step.(x)
-    
-    elseif fun == identity
-        return one.(x)
-    
-    elseif fun == σ
-        return σ.(x) .* (1 .- σ.(x))
-    
-    elseif fun == step
-        return zero.(x)
-    
-    elseif fun == tanh
-        return 1 .- tanh.(x).^2
-    end
-
-    (fun.(x + ϵ) .- fun.(x - ϵ))/(2ϵ)
-end
-
 abstract type AbstractLayer end
-
 mutable struct Dense{I, O} <: AbstractLayer
     weight::VecOrMat{Float64}
     bias::VecOrElement{Float64}

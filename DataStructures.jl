@@ -1,7 +1,6 @@
-
 """
 
-Stack{T}
+    Stack{T}
 
 A "FIFO" (First-in-first-out) array struct. It has 2 main methods:
 
@@ -19,7 +18,7 @@ end
 
 """
 
-Queue{T}
+    Queue{T}
 
 A "FILO" (First-in-last-out) array struct. It has 2 main methods:
 
@@ -36,7 +35,7 @@ end
 
 """
 
-insert!(datastructure, item)
+    insert!(datastructure, item)
 
 Insert an element to a Structured Data collection as Stack, Queue or Tree
 """
@@ -49,7 +48,7 @@ end
 
 """
 
-remove!(datastructure [, item])
+    remove!(datastructure [, item])
 
 Remove and return an item based on the logic of the Data Structure.
 
